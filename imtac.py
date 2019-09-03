@@ -1,5 +1,3 @@
-
-
 import pandas as pd
 from openpyxl import load_workbook
 import os
@@ -7,6 +5,11 @@ import math
 import statistics
 from numpy import mean, std
 import sys
+
+
+hash = dict() # key is 
+final = pd.DataFrame()
+
 
 def firstOccurance(a, x):
     lo = 0
@@ -36,16 +39,19 @@ def getAbundanceColumnName(df, sheetName):
 
 def processFile(fileName, sheetName, carriedFiled):
 	df = pd.read_excel(fileName, dtype=str)
-	df = df[df["Protein FDR Confidence: Combined"] != 'High']
+	df = df[df["Protein FDR Confidence: Combined"] == 'High']
 	orignalColumns = ['Accession', 'Gene Symbol', '# Unique Peptides']
-	abundanceRatioName = getAbundanceColumnName(df, sheetName)
-	orignalColumns.append(abundanceRatioName)
+
 
 	# result_df = pd.DataFrame(columns = ['Accession', 'Gene Symbol', '# Unique Peptides', 'Abundance', 'Tag', 'IMTAC ID', 'Date', 'Concentration', 'Cell Line', 'Probe','Raio N', 'Score', 'Rank', 'Log2', 'Median'])
 	result_df = pd.DataFrame(columns = orignalColumns)
 	for orignalColumn in orignalColumns:
 		result_df[orignalColumn] = df[orignalColumn]
-
+	# abundance Ratio
+	abundanceRatioName = getAbundanceColumnName(df, sheetName)
+	result_df["Abundance Ratio"] = df[abundanceRatioName]
+	abundanceRatioName = "Abundance Ratio"
+	# carried values
 	for key, value in carriedFiled.items():
 		result_df[key] = value
 	#log2
@@ -55,7 +61,7 @@ def processFile(fileName, sheetName, carriedFiled):
 	log2Floats = [x for x in list(result_df['Log2']) if str(x) != 'nan']
 	meanValue = mean(log2Floats)
 	stdValue = statistics.stdev(log2Floats)
-	print("std: " + str(stdValue) + "mean: " + str(meanValue))
+	#print("std: " + str(stdValue) + "mean: " + str(meanValue))
 	result_df['Score'] = result_df.apply(lambda row: (row['Log2'] - meanValue)/stdValue, axis = 1)
 
 	#rank
@@ -67,11 +73,23 @@ def processFile(fileName, sheetName, carriedFiled):
 	all_ratios = []
 	for ratio in result_df[abundanceRatioName]:
 		try:
+			if str(ratio) == 'nan':
+				continue
 			all_ratios.append(float(ratio))
 		except:
 			print("AbundanceRatio is not convertible")
-	result_df['Median'] = statistics.median(all_ratios)
+	median = statistics.median(all_ratios)
+	result_df['Median'] = median
 
+	# Raion N
+	result_df['Ratio N'] = result_df.apply(lambda row: float(row[abundanceRatioName])/median, axis = 1)
+
+	#Position
+	result_df['Position'] = result_df.apply(lambda row: str(row['Rank']) + "/" + str(len(all_ratios)), axis = 1)
+
+	#append to final
+	global final
+	final = final.append(result_df)[result_df.columns.tolist()]
 	return result_df
 
 def writeToFile(fileName, sheetName, result_df):
@@ -83,50 +101,53 @@ def writeToFile(fileName, sheetName, result_df):
 	if not os.path.exists('processed'):
 		os.makedirs("processed")
 	df = pd.read_excel(fileName, header=None)
-	writer = pd.ExcelWriter("processed//" + fileName, engine = 'openpyxl')
-	df.to_excel(writer, "Proteins")
+	writer = pd.ExcelWriter("processed/" + fileName, engine = 'openpyxl')
+	df.to_excel(writer, "Proteins", header=None, index=None)
 	result_df.to_excel(writer, sheetName, index=None)
 	writer.save()
 	writer.close()
 
-INPUT="input.xlsx"
+def writeAllTofile(path):
+	writer = pd.ExcelWriter(path, engine = 'openpyxl')
+	final.to_excel(writer, "all")
+	writer.save()
+	writer.close()
+
+
 
 if __name__ == '__main__':
-	df = pd.read_csv(sys.argv[1], header=None, dtype=str)
+	inputFile = "input.csv" if len(sys.argv) <= 1 else sys.argv[1]
+	df = pd.read_csv(inputFile, header=None, dtype=str)
 	fileNames = os.listdir('.')
 	for i in range(len(df)) : 
 		#print(list(df.loc[i]))
-
 		s = df.loc[i, 1].replace("S", "")
+		if len(s.split('-')) != 2:
+			print("Skip", df.loc[i, 1])
+			continue
 
 		fileNameKeyword = s.split('-')[0] + "-S" + s.split('-')[1] 
+		people = df.loc[i, 2]
 		
 		small = str(int(df.loc[i, 3])-1)
 		big = df.loc[i, 3]
 		sheetName = small+"-"+big
-		print("Process " + fileNameKeyword + " " +sheetName)
+		print("Process " + fileNameKeyword + " " +sheetName + " " + people)
 		carriedFiled = dict()
 		carriedFiled['Tag'] = big +'/' + small
 		carriedFiled["IMTAC ID"] = df.loc[i, 13]
 		carriedFiled["Date"] = df.loc[i, 0].split(" ")[0]
 		carriedFiled["Concentration"] = str(df.loc[i, 6])+"/"+str(df.loc[i, 8])
 		carriedFiled["Cell Line"] = df.loc[i, 16]
-		carriedFiled["Probe"] = df.loc[i, 17]
+		carriedFiled["Probe"] = df.loc[i, 7]
 
 		for fileName in fileNames:
-			if fileNameKeyword in fileName and "~" not in fileName and "new" not in fileName:
+			if fileNameKeyword in fileName and people in fileName and "~" not in fileName:
 				print("Working on file " + fileName)
 				result_df = processFile(fileName, sheetName, carriedFiled)
 				print("Writing to file " + fileName)
 				writeToFile(fileName, sheetName, result_df)
 		print("------------")
-		
-
-
-
-
- 
-
-
-
-
+	print("All done, generating all.")
+	writeAllTofile("processed/all.xlsx")
+	#input('Program done. Enter anything to close this window.')
