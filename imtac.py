@@ -126,13 +126,15 @@ if __name__ == '__main__':
 			print("Skip", df.loc[i, 1])
 			continue
 
-		fileNameKeyword = s.split('-')[0] + "-S" + s.split('-')[1] 
+		fileNameKeyword = s.split('-')[0] + "-S" + s.split('-')[1]
+		number = fileNameKeyword.split('-')[0]
+		sn = fileNameKeyword.split('-')[1]
 		people = df.loc[i, 2]
 		
 		small = str(int(df.loc[i, 3])-1)
 		big = df.loc[i, 3]
 		sheetName = small+"-"+big
-		print("Process " + fileNameKeyword + " " +sheetName + " " + people)
+		print("Process " + number + " " +sn + " " + people)
 		carriedFiled = dict()
 		carriedFiled['Tag'] = big +'/' + small
 		carriedFiled["IMTAC ID"] = df.loc[i, 13]
@@ -142,7 +144,7 @@ if __name__ == '__main__':
 		carriedFiled["Probe"] = df.loc[i, 7]
 
 		for fileName in fileNames:
-			if fileNameKeyword in fileName and people in fileName and "~" not in fileName:
+			if number in fileName and sn in fileName and people in fileName and "~" not in fileName:
 				print("Working on file " + fileName)
 				result_df = processFile(fileName, sheetName, carriedFiled)
 				print("Writing to file " + fileName)
