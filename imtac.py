@@ -138,10 +138,10 @@ if __name__ == '__main__':
 			print("Process " + number + " " +sn + " " + people)
 			carriedFiled = dict()
 			carriedFiled['Tag'] = big +'/' + small
-			carriedFiled["IMTAC ID"] = df.loc[i, 13]
+			carriedFiled["IMTAC ID"] = "IMTAC%s-%s-%s"%(number, sn, people)
 			carriedFiled["Date"] = df.loc[i, 0].split(" ")[0]
 			carriedFiled["Concentration"] = str(df.loc[i, 6])+"/"+str(df.loc[i, 8])
-			carriedFiled["Cell Line"] = df.loc[i, 16]
+			carriedFiled["Cell Line"] = df.loc[i, 4]
 			carriedFiled["Probe"] = df.loc[i, 7]
 
 			for fileName in fileNames:
