@@ -60,14 +60,15 @@ def processFile(fileName, sheetName, carriedFiled):
 	#Set log2 to nan if gene Symbol start with KRT
 	for i, j in result_df.iterrows(): 
 		if str(j['Gene Symbol']).startswith('KRT'):
-			j['Log2'] = 'nan'
+			result_df.loc[i, 'Log2'] = 'nan'
+	print("filter KRT done")
 
 	# score
 	log2Floats = [x for x in list(result_df['Log2']) if str(x) != 'nan']
 	meanValue = mean(log2Floats)
 	stdValue = statistics.stdev(log2Floats)
 	#print("std: " + str(stdValue) + "mean: " + str(meanValue))
-	result_df['Score'] = result_df.apply(lambda row: (row['Log2'] - meanValue)/stdValue, axis = 1)
+	result_df['Score'] = result_df.apply(lambda row: (float(row['Log2']) - meanValue)/stdValue, axis = 1)
 
 
 
