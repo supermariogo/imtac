@@ -124,43 +124,40 @@ def writeAllTofile(path):
 
 
 if __name__ == '__main__':
-	try:
-		inputFile = "log.csv" if len(sys.argv) <= 1 else sys.argv[1]
-		df = pd.read_csv(inputFile, header=None, dtype=str)
-		fileNames = os.listdir('.')
-		for i in range(len(df)) : 
-			#print(list(df.loc[i]))
-			s = df.loc[i, 1].replace("S", "")
-			if len(s.split('-')) != 2:
-				print("Skip", df.loc[i, 1])
-				continue
+	inputFile = "log.csv" if len(sys.argv) <= 1 else sys.argv[1]
+	df = pd.read_csv(inputFile, header=None, dtype=str)
+	fileNames = os.listdir('.')
+	for i in range(len(df)) : 
+		#print(list(df.loc[i]))
+		s = df.loc[i, 1].replace("S", "")
+		if len(s.split('-')) != 2:
+			print("Skip", df.loc[i, 1])
+			continue
 
-			fileNameKeyword = s.split('-')[0] + "-S" + s.split('-')[1]
-			number = fileNameKeyword.split('-')[0]
-			sn = fileNameKeyword.split('-')[1]
-			people = df.loc[i, 2]
-			
-			small = str(int(df.loc[i, 3])-1)
-			big = df.loc[i, 3]
-			sheetName = small+"-"+big
-			print("Process " + number + " " +sn + " " + people)
-			carriedFiled = dict()
-			carriedFiled['Tag'] = big +'/' + small
-			carriedFiled["IMTAC ID"] = "IMTAC%s-%s-%s"%(number, sn, people)
-			carriedFiled["Date"] = df.loc[i, 0].split(" ")[0]
-			carriedFiled["Concentration"] = str(df.loc[i, 6])+"/"+str(df.loc[i, 8])
-			carriedFiled["Cell Line"] = df.loc[i, 4]
-			carriedFiled["Probe"] = df.loc[i, 7]
+		fileNameKeyword = s.split('-')[0] + "-S" + s.split('-')[1]
+		number = fileNameKeyword.split('-')[0]
+		sn = fileNameKeyword.split('-')[1]
+		people = df.loc[i, 2]
+		
+		small = str(int(df.loc[i, 3])-1)
+		big = df.loc[i, 3]
+		sheetName = small+"-"+big
+		print("Process " + number + " " +sn + " " + people)
+		carriedFiled = dict()
+		carriedFiled['Tag'] = big +'/' + small
+		carriedFiled["IMTAC ID"] = "IMTAC%s-%s-%s"%(number, sn, people)
+		carriedFiled["Date"] = df.loc[i, 0].split(" ")[0]
+		carriedFiled["Concentration"] = str(df.loc[i, 6])+"/"+str(df.loc[i, 8])
+		carriedFiled["Cell Line"] = df.loc[i, 4]
+		carriedFiled["Probe"] = df.loc[i, 7]
 
-			for fileName in fileNames:
-				if number in fileName and sn in fileName and people in fileName and "~" not in fileName:
-					print("Working on file " + fileName)
-					result_df = processFile(fileName, sheetName, carriedFiled)
-					print("Writing to file " + fileName)
-					writeToFile(fileName, sheetName, result_df)
-			print("------------")
-		print("All done, generating all.")
-		writeAllTofile("processed/all.xlsx")
-	except Exception as e:
-		print(e)
-	input('Program done. Enter anything to close this window.')
+		for fileName in fileNames:
+			if number in fileName and sn in fileName and people in fileName and "~" not in fileName:
+				print("Working on file " + fileName)
+				result_df = processFile(fileName, sheetName, carriedFiled)
+				print("Writing to file " + fileName)
+				writeToFile(fileName, sheetName, result_df)
+		print("------------")
+	print("All done, generating all.")
+	writeAllTofile("processed/all.xlsx")
+	print('Program done. Enter anything to close this window.')
