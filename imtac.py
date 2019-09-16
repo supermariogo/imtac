@@ -93,7 +93,7 @@ def processFile(fileName, sheetName, carriedFiled):
 	result_df['Ratio N'] = result_df.apply(lambda row: float(row[abundanceRatioName])/median, axis = 1)
 
 	#Position
-	result_df['Position'] = result_df.apply(lambda row: str(row['Rank']) + "/" + str(len(all_ratios)), axis = 1)
+	result_df['Position'] = result_df.apply(lambda row: str(row['Rank']) + "/" + str(len(log2Floats)), axis = 1)
 
 	#append to final
 	global final
