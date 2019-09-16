@@ -59,7 +59,7 @@ def processFile(fileName, sheetName, carriedFiled):
 
 	#Set log2 to nan if gene Symbol start with KRT
 	for i, j in result_df.iterrows(): 
-		if j['Gene Symbol'].startswith('KRT'):
+		if str(j['Gene Symbol']).startswith('KRT'):
 			j['Log2'] = 'nan'
 
 	# score
