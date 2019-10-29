@@ -39,59 +39,61 @@ def getAbundanceColumnName(df, sheetName):
 
 
 def getSimpleVersion(originalDf, sheetName, carriedFiled):
-	df = originalDf
-	df = df[df["Protein FDR Confidence: Combined"] == 'High']
-	orignalColumns = ['Gene Symbol', 'Description', '# Unique Peptides', 'MW [kDa]']
+    df = originalDf
+    df = df[df["Protein FDR Confidence: Combined"] == 'High']
+    orignalColumns = ['Gene Symbol', 'Description', '# Unique Peptides', 'MW [kDa]']
 
-	# result_df = pd.DataFrame(columns = ['Accession', 'Gene Symbol', '# Unique Peptides', 'Abundance', 'Tag', 'IMTAC ID', 'Date', 'Concentration', 'Cell Line', 'Probe','Raio N', 'Score', 'Rank', 'Log2', 'Median'])
-	result_df = pd.DataFrame(columns=orignalColumns)
-	for orignalColumn in orignalColumns:
-		result_df[orignalColumn] = df[orignalColumn]
-	# abundance Ratio
-	abundanceRatioName = getAbundanceColumnName(df, sheetName)
-	result_df["Abundance Ratio"] = df[abundanceRatioName]
-	abundanceRatioName = "Abundance Ratio"
-	# log2
-	result_df['Log2'] = result_df.apply(lambda row: math.log2(float(row[abundanceRatioName])), axis=1)
+    # result_df = pd.DataFrame(columns = ['Accession', 'Gene Symbol', '# Unique Peptides', 'Abundance', 'Tag', 'IMTAC ID', 'Date', 'Concentration', 'Cell Line', 'Probe','Raio N', 'Score', 'Rank', 'Log2', 'Median'])
+    result_df = pd.DataFrame(columns=orignalColumns)
+    for orignalColumn in orignalColumns:
+        result_df[orignalColumn] = df[orignalColumn]
+    # abundance Ratio
+    abundanceRatioName = getAbundanceColumnName(df, sheetName)
+    result_df["Abundance Ratio"] = df[abundanceRatioName]
+    abundanceRatioName = "Abundance Ratio"
+    # log2
+    result_df['Log2'] = result_df.apply(lambda row: math.log2(float(row[abundanceRatioName])), axis=1)
 
-	# Set log2 to nan if gene Symbol start with KRT
-	for i, j in result_df.iterrows():
-		if str(j['Gene Symbol']).startswith('KRT'):
-			result_df.loc[i, 'Log2'] = 'nan'
-	print("filter KRT done")
+    # Set log2 to nan if gene Symbol start with KRT
+    for i, j in result_df.iterrows():
+        if str(j['Gene Symbol']).startswith('KRT'):
+            result_df.loc[i, 'Log2'] = 'nan'
+    print("filter KRT done")
 
-	# score
-	log2Floats = [x for x in list(result_df['Log2']) if str(x) != 'nan']
-	meanValue = mean(log2Floats)
-	stdValue = statistics.stdev(log2Floats)
-	# print("std: " + str(stdValue) + "mean: " + str(meanValue))
-	result_df['Score'] = result_df.apply(lambda row: (float(row['Log2']) - meanValue) / stdValue, axis=1)
+    # score
+    log2Floats = [x for x in list(result_df['Log2']) if str(x) != 'nan']
+    meanValue = mean(log2Floats)
+    stdValue = statistics.stdev(log2Floats)
+    # print("std: " + str(stdValue) + "mean: " + str(meanValue))
+    result_df['Score'] = result_df.apply(lambda row: (float(row['Log2']) - meanValue) / stdValue, axis=1)
 
-	# rank
-	allScores = sorted([x for x in list(result_df['Score']) if str(x) != 'nan'])
-	result_df['Rank'] = result_df.apply(lambda row: firstOccurance(allScores, row['Score']), axis=1)
+    # rank
+    allScores = sorted([x for x in list(result_df['Score']) if str(x) != 'nan'])
+    result_df['Rank'] = result_df.apply(lambda row: firstOccurance(allScores, row['Score']), axis=1)
 
-	# Calculate Median
-	all_ratios = []
-	for ratio in result_df[abundanceRatioName]:
-		try:
-			if str(ratio) == 'nan':
-				continue
-			all_ratios.append(float(ratio))
-		except:
-			print("AbundanceRatio is not convertible")
-	median = statistics.median(all_ratios)
+    # Calculate Median
+    all_ratios = []
+    for ratio in result_df[abundanceRatioName]:
+        try:
+            if str(ratio) == 'nan':
+                continue
+            all_ratios.append(float(ratio))
+        except:
+            print("AbundanceRatio is not convertible")
+    median = statistics.median(all_ratios)
 
-	# Raion N
-	result_df['Ratio N'] = result_df.apply(lambda row: float(row[abundanceRatioName]) / median, axis=1)
+    # Raion N
+    result_df['Ratio N'] = result_df.apply(lambda row: float(row[abundanceRatioName]) / median, axis=1)
 
-	result_df = result_df[result_df["Rank"] != -1]
-	result_df = result_df.sort_values('Rank')
+    result_df = result_df[result_df["Rank"] != -1]
+    result_df = result_df.sort_values('Rank')
 
-	# reorder by copying
-	newOrderColumns = ['Rank', 'Description', abundanceRatioName, 'Ratio N', '# Unique Peptides', 'MW [kDa]', 'Score']
-	simple_df = pd.DataFrame(result_df, columns=newOrderColumns)
-	return simple_df
+    # reorder by copying
+    newOrderColumns = ['Rank', 'Description', abundanceRatioName, 'Ratio N', '# Unique Peptides', 'MW [kDa]', 'Score']
+    simple_df = pd.DataFrame(result_df, columns=newOrderColumns)
+    simple_df.columns = ['Rank', 'Description', 'Ratio before median N', 'Ratio after median N', '#U.P', 'kDa', 'Score']
+    return simple_df
+
 
 def getFullVersion(originalDf, sheetName, carriedFiled):
     df = originalDf
