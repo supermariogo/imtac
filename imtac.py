@@ -23,10 +23,11 @@ def firstOccurance(a, x):
             hi = mid
         else:
             hi = mid
-    if a[hi] == x:
-        return hi + 1
-    elif a[lo] == x:
+    if a[lo] == x:
         return lo + 1
+    elif a[hi] == x:
+        return hi + 1
+
     return -1
 
 
